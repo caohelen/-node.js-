@@ -1,9 +1,9 @@
 const Mysql = require('node-mysql-promise');
 const mysql = Mysql.createConnection({
-    host        : '10.144.138.54',
+    host: '10.144.138.54',
     // host: 'localhost',
     user: 'root',
-    password    : 'oracle',//服务器密码
+    password: 'oracle',//服务器密码
     // password: 'chl',//本地密码
     port: '3306',
     database: 'cAuth',
@@ -60,7 +60,6 @@ module.exports = {
                         ctx.response.body = {
                             state_code: '1',
                             msg: '登入成功',
-                            data: datas
                         }
                     }).catch(function (err) {
                         //插入失败，err为具体的错误信息
@@ -75,7 +74,6 @@ module.exports = {
                     ctx.response.body = {
                         state_code: '1',
                         msg: '登入成功',
-                        data: userdata[0]
                     }
                 }
             } catch (e) {
@@ -88,7 +86,43 @@ module.exports = {
     },
     getphone: async (ctx, next) => {
 
-    }
+    },
+
+    selectlogin: async (ctx,next) => {
+        const {code} = ctx.request.body
+        if (code) {
+            try {
+                let grant_type = 'authorization_code'
+                let appId = "wx2b4b61fd602aaaa0"
+                let secret = "0f4b566d652dd9e624e57139bd38863d"
+
+                let url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' + appId + '&secret=' + secret + '&js_code=' + code + '&grant_type=' + grant_type
+                const userinfo = await getJSON(url)
+                const { openid, session_key } = userinfo
+
+                let userdata = await mysql.table('user').where({ open_id: openid }).select();
+
+
+                if (!userdata || userdata.length === 0) {
+                    ctx.response.body = {
+                        state_code:'0',
+                        msg:'尚未登入，请先登入',
+                    }
+
+                } else {
+                    ctx.response.body = {
+                        state_code: '1',
+                        msg: '登入成功',
+                    }
+                }
+            } catch (e) {
+                console.log(e);
+
+            }
+        } else {
+
+        }
+    },
 };
 
 function getJSON(url) {
